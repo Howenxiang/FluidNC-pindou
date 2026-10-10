@@ -33,6 +33,7 @@ namespace Machine {
         void afterParse() override;
         bool hasSwitches();
         void rearmSwitches();
+        void clearSwitches();
         bool isReal();
         void makeDualSwitches();
         void limitOtherAxis(axis_t axis);

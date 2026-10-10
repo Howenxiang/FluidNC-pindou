@@ -29,6 +29,7 @@ namespace MotorDrivers {
         void config_motor() override;
         void debug_message() override;
         void validate() override;
+        void apply_homing_phase() override;
 
         void group(Configuration::HandlerBase& handler) override {
             TrinamicUartDriver::group(handler);

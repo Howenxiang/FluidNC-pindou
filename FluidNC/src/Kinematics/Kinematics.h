@@ -53,6 +53,7 @@ namespace Kinematics {
                          uint32_t          rotations);
 
         bool canHome(AxisMask axisMask);
+        AxisMask homingModeAxes(AxisMask axisMask);
         bool kinematics_homing(AxisMask axisMask);
         void releaseMotors(AxisMask axisMask, MotorMask motors);
         bool limitReached(AxisMask& axisMask, MotorMask& motors, MotorMask limited);
@@ -102,6 +103,7 @@ namespace Kinematics {
         virtual bool transform_cartesian_to_motors(float* motors, float* cartesian) = 0;
 
         virtual bool canHome(AxisMask axisMask) { return false; }
+        virtual AxisMask homingModeAxes(AxisMask axisMask) { return axisMask; }
         virtual void releaseMotors(AxisMask axisMask, MotorMask motors) {}
         virtual bool limitReached(AxisMask& axisMask, MotorMask& motors, MotorMask limited) { return false; }
         virtual bool kinematics_homing(AxisMask& axisMask) { return false; }

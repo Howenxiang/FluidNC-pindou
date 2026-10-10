@@ -44,6 +44,14 @@ namespace Kinematics {
         Cartesian::init_position();
     }
 
+    AxisMask CoreXY::homingModeAxes(AxisMask axisMask) {
+        AxisMask xyAxes = (1 << X_AXIS) | (1 << Y_AXIS);
+        if (axisMask & xyAxes) {
+            axisMask |= xyAxes;
+        }
+        return axisMask;
+    }
+
     bool CoreXY::canHome(AxisMask axisMask) {
         // make sure there are no axes that are not in homingMask
         if (axisMask && !(axisMask & Machine::Axes::homingMask)) {
@@ -63,6 +71,20 @@ namespace Kinematics {
         // must run to perform a move parallel to an axis).  When a limit switch is hit, we
         // clear the associated axis bit and stop motion.  The homing code will then replan
         // a new move along the remaining axes.
+        AxisMask xyAxes   = (1 << X_AXIS) | (1 << Y_AXIS);
+        MotorMask xyMotors = Machine::Axes::axes_to_motors(xyAxes);
+
+        // A TMC DIAG signal belongs to a physical CoreXY motor, not to a logical
+        // Cartesian axis. While homing one logical XY axis, a stall from either
+        // coupled motor therefore completes the current approach.
+        if ((axisMask & xyAxes) && (limited & xyMotors)) {
+            AxisMask activeXY = axisMask & xyAxes;
+            clear_bits(axisMask, activeXY);
+            clear_bits(motors, xyMotors);
+            releaseMotors(axisMask, motors);
+            return true;
+        }
+
         MotorMask toClear = axisMask & limited;
 
         clear_bits(axisMask, limited);

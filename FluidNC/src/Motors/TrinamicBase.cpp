@@ -84,6 +84,10 @@ namespace MotorDrivers {
         return true;
     }
 
+    bool TrinamicBase::is_sensorless_homing() const {
+        return static_cast<TrinamicMode>(trinamicModes[_homing_mode].value) == TrinamicMode::StallGuard;
+    }
+
     float TrinamicBase::holdPercent() {
         if (_run_current == 0) {
             return 0.0;

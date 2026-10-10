@@ -97,8 +97,12 @@ namespace Machine {
         mc_dwell(10);  // Run the protocol loop to handle switch events after rearm
 
         // Cycle stop in pulloff is success unless
-        // the limit switches are still active.
-        if (limited() & _phaseMotors) {
+        // the limit switches are still active. Sensorless DIAG may remain
+        // asserted after a stall, so ignore those cached bits during pulloff.
+        MotorMask persistentLimits = limited() & _phaseMotors;
+        persistentLimits &= ~Axes::sensorless_homing_motors(
+            config->_kinematics->homingModeAxes(_phaseAxes));
+        if (persistentLimits) {
             // Homing failure: Limit switch still engaged after pull-off motion
             fail(ExecAlarm::HomingFailPulloff);
             return;
@@ -130,7 +134,7 @@ namespace Machine {
         // with phase-dependent settings (e.g. Trinamic StallGuard
         // thresholds) can retune for the seek vs feed rate.
         if (_phase == FastApproach || _phase == SlowApproach) {
-            Axes::set_homing_phase(_cycleAxes, _phase == FastApproach);
+            Axes::set_homing_phase(config->_kinematics->homingModeAxes(_cycleAxes), _phase == FastApproach);
         }
 
         if (_phase == CycleDone || (_phase == Phase::Pulloff2 && !needsPulloff2(_cycleMotors))) {
@@ -160,6 +164,15 @@ namespace Machine {
                 nextPhase();
                 return;
             }
+        }
+
+        // StallGuard/DIAG is meaningful only during approach. Disable it while
+        // pulling off so a latched DIAG level cannot fail the successful pulloff.
+        Axes::set_homing_mode(config->_kinematics->homingModeAxes(_cycleAxes), approach());
+        if (approach()) {
+            // A TMC DIAG output may still be high after the preceding pulloff.
+            // Start each approach with a fresh limit mask.
+            Axes::clear_sensorless_homing_limits(config->_kinematics->homingModeAxes(_phaseAxes));
         }
 
         config->_kinematics->homing_move(_phaseAxes, _phaseMotors, _phase, _settling_ms);
@@ -243,7 +256,9 @@ namespace Machine {
         log_debug("Homing Cycle " << Axes::maskToNames(_cycleAxes));
 
         _cycleAxes &= Machine::Axes::homingMask;
-        _cycleMotors = Axes::set_homing_mode(_cycleAxes, true);
+        AxisMask homingAxes = config->_kinematics->homingModeAxes(_cycleAxes);
+        _cycleMotors = Axes::set_homing_mode(homingAxes, true);
+        Axes::clear_sensorless_homing_limits(homingAxes);
 
         _phase = Phase::PrePulloff;
         _runs  = Axes::_homing_runs;
@@ -253,7 +268,7 @@ namespace Machine {
     void Homing::fail(ExecAlarm alarm) {
         Stepper::reset();  // Stop moving
         send_alarm(alarm);
-        Axes::set_homing_mode(_cycleAxes, false);  // tell motors homing is done...failed
+        Axes::set_homing_mode(config->_kinematics->homingModeAxes(_cycleAxes), false);  // tell motors homing is done...failed
         Axes::set_disable(Stepping::_idleMsecs != 255, false);
     }
 
@@ -307,7 +322,7 @@ namespace Machine {
         //        logArray("mpos transformed", mpos, n_axis);
 
         sys.step_control = {};                     // Return step control to normal operation.
-        axes->set_homing_mode(_cycleAxes, false);  // tell motors homing is done
+        axes->set_homing_mode(config->_kinematics->homingModeAxes(_cycleAxes), false);  // tell motors homing is done
     }
 
 #if 0

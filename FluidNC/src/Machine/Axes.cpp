@@ -126,6 +126,30 @@ namespace Machine {
         return motorsCanHome;
     }
 
+    void Axes::clear_sensorless_homing_limits(AxisMask axisMask) {
+        for (axis_t axis = X_AXIS; axis < _numberAxis; axis++) {
+            if (!bitnum_is_true(axisMask, axis) || !_axis[axis]) continue;
+            for (motor_t motor = 0; motor < Axis::MAX_MOTORS_PER_AXIS; motor++) {
+                auto m = _axis[axis]->_motors[motor];
+                if (m && m->_driver->is_sensorless_homing()) m->clearSwitches();
+            }
+        }
+    }
+
+    MotorMask Axes::sensorless_homing_motors(AxisMask axisMask) {
+        MotorMask result = 0;
+        for (axis_t axis = X_AXIS; axis < _numberAxis; axis++) {
+            if (!bitnum_is_true(axisMask, axis) || !_axis[axis]) continue;
+            for (motor_t motor = 0; motor < Axis::MAX_MOTORS_PER_AXIS; motor++) {
+                auto m = _axis[axis]->_motors[motor];
+                if (m && m->_driver->is_sensorless_homing()) {
+                    set_bitnum(result, motor_bit(axis, motor));
+                }
+            }
+        }
+        return result;
+    }
+
     void Axes::set_homing_phase(AxisMask axisMask, bool fastApproach) {
         for (axis_t axis = X_AXIS; axis < _numberAxis; axis++) {
             if (bitnum_is_true(axisMask, axis)) {

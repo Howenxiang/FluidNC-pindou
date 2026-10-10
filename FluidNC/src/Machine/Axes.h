@@ -77,6 +77,8 @@ namespace Machine {
         // The return value is a bitmask of axes that can home
         static MotorMask set_homing_mode(AxisMask homing_mask, bool isHoming);
         static void      set_homing_phase(AxisMask axisMask, bool fastApproach);
+        static void      clear_sensorless_homing_limits(AxisMask axisMask);
+        static MotorMask sensorless_homing_motors(AxisMask axisMask);
 
         static void set_disable(axis_t axis, bool disable, bool manual_override);
         static void set_disable(bool disable, bool manual_override);

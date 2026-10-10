@@ -81,7 +81,7 @@ namespace MotorDrivers {
             return;
         }
 
-        TrinamicMode _mode = static_cast<TrinamicMode>(trinamicModes[isHoming ? _homing_mode : _run_mode].value);
+        _mode = static_cast<TrinamicMode>(trinamicModes[isHoming ? _homing_mode : _run_mode].value);
 
         // Run and hold current configuration items are in (float) Amps,
         // but the TMCStepper library expresses run current as (uint16_t) mA
@@ -98,6 +98,13 @@ namespace MotorDrivers {
         uint32_t usteps = _microsteps == 1 ? 0 : _microsteps;
         tmc2209->microsteps(usteps);
         tmc2209->pdn_disable(true);  // powerdown pin is disabled. uses ihold.
+
+        if (_mode != TrinamicMode::StallGuard) {
+            // Clear a previous StallGuard window so DIAG cannot remain latched
+            // while the homing state machine is pulling off or idle.
+            tmc2209->TCOOLTHRS(0);
+            tmc2209->SGTHRS(0);
+        }
 
         switch (_mode) {
             case TrinamicMode ::StealthChop:
@@ -116,7 +123,7 @@ namespace MotorDrivers {
                 tmc2209->en_spreadCycle(false);
                 tmc2209->pwm_autoscale(true);
                 tmc2209->TCOOLTHRS(calc_tstep(150));
-                tmc2209->SGTHRS(_stallguard);
+                tmc2209->SGTHRS(active_stallguard());
                 break;
             }
         }
@@ -134,6 +141,16 @@ namespace MotorDrivers {
             log_verbose("IHOLD_IRUN: " << to_hex(tmc2209->IHOLD_IRUN()));
         }
 
+        _cs_pin.synchronousWrite(false);
+    }
+
+    void TMC2209Driver::apply_homing_phase() {
+        if (_has_errors) {
+            return;
+        }
+        _cs_pin.synchronousWrite(true);
+        tmc2209->TCOOLTHRS(calc_tstep(150));
+        tmc2209->SGTHRS(active_stallguard());
         _cs_pin.synchronousWrite(false);
     }
 

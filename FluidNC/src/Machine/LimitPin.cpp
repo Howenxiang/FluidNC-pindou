@@ -51,6 +51,13 @@ namespace Machine {
         EventPin::init();
     }
 
+    void LimitPin::rearm() {
+        Pin::rearm();
+        // Synchronize cached limit masks with the actual pin level after
+        // interrupts are re-enabled; the inactive edge may have been missed.
+        trigger(read());
+    }
+
     void LimitPin::trigger(bool active) {
         if (active) {
             if (Homing::approach()) {

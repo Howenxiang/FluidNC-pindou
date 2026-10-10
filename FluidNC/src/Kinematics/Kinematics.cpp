@@ -47,6 +47,11 @@ namespace Kinematics {
         return _system->canHome(axisMask);
     }
 
+    AxisMask Kinematics::homingModeAxes(AxisMask axisMask) {
+        Assert(_system != nullptr, no_system);
+        return _system->homingModeAxes(axisMask);
+    }
+
     bool Kinematics::kinematics_homing(AxisMask axisMask) {
         Assert(_system != nullptr, no_system);
         return _system->kinematics_homing(axisMask);

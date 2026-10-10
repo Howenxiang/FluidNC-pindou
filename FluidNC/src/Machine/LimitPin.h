@@ -32,6 +32,7 @@ namespace Machine {
         LimitPin(axis_t axis, motor_t motorNum, int8_t direction, bool& phardLimits);
 
         void trigger(bool active) override;
+        void rearm();
 
         void makeDualMask();  // makes this a mask for motor0 and motor1
         void setExtraMotorLimit(axis_t axis, motor_t motorNum);

@@ -1059,7 +1059,9 @@ esp_err_t fnc_uart_param_config(uart_port_t uart_num, const fnc_uart_config_t *u
     uart_hal_txfifo_rst(&(uart_context[uart_num].hal));
     // Disable the previously selected clock source, and update the new source in context
     soc_module_clk_t uart_old_sclk_sel = uart_context[uart_num].sclk_sel;
-    esp_clk_tree_enable_src(uart_old_sclk_sel, false);
+    if (uart_old_sclk_sel != (soc_module_clk_t)-1) {
+        esp_clk_tree_enable_src(uart_old_sclk_sel, false);
+    }
     if (success) {
         uart_context[uart_num].sclk_sel = uart_sclk_sel;
     } else {

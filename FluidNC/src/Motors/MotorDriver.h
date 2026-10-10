@@ -60,6 +60,7 @@ namespace MotorDrivers {
         // Some motor types require differ setups for homing and
         // normal operation.  Returns true if the motor can home
         virtual bool set_homing_mode(bool isHoming) = 0;
+        virtual bool is_sensorless_homing() const { return false; }
 
         // set_homing_phase() is called during a homing cycle when the
         // cycle transitions between the fast (seek) approach and the

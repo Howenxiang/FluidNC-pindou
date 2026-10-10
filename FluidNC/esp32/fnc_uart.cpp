@@ -14,6 +14,7 @@ const int PINNUM_MAX                        = 64;
 bool      events_enabled[UART_NUM_MAX]      = { false };
 InputPin* objects[UART_NUM_MAX][PINNUM_MAX] = { nullptr };
 uint8_t   last[UART_NUM_MAX]                = { 0 };
+bool      rx_configured[UART_NUM_MAX]       = { false };
 
 void uart_data_callback(uart_port_t uart_num, uint8_t* buf, int* len) {
     size_t in_len = size_t(*len);
@@ -50,7 +51,9 @@ static void uart_init_on_core_task(void* arg) {
     uart_port_t port = ((uart_port_t)(uintptr_t)arg);
 
     fnc_uart_driver_install(port, 256, 0, 0, NULL, ESP_INTR_FLAG_IRAM);
-    fnc_uart_set_data_callback(port, uart_data_callback);
+    if (rx_configured[port]) {
+        fnc_uart_set_data_callback(port, uart_data_callback);
+    }
 
     xSemaphoreGive(s_done);
     vTaskDelete(NULL);
@@ -68,7 +71,7 @@ void uart_init(uint32_t uart_num) {
 
     // For UART0, install directly on the current core (usually the main core)
     // For other UARTs, use core 0 to avoid StepTimer conflicts
-    if (uart_num == 0) {
+    if (uart_num == 0 || !rx_configured[uart_num]) {
         // Install UART0 on the current core so ISR can signal this task properly
         uart_driver_install(port, 256, 0, 0, NULL, ESP_INTR_FLAG_IRAM);
     } else {
@@ -87,7 +90,7 @@ std::map<UartData, uart_word_length_t> datalen = {
 
 std::map<UartStop, uart_stop_bits_t> stopbits = {
     { UartStop::Bits1, UART_STOP_BITS_1 },
-    { UartStop::Bits1, UART_STOP_BITS_1_5 },
+    { UartStop::Bits1_5, UART_STOP_BITS_1_5 },
     { UartStop::Bits2, UART_STOP_BITS_2 },
 };
 
@@ -104,7 +107,7 @@ std::map<UartParity, uart_parity_t> parity_mode = {
 void uart_mode(uint32_t uart_num, uint32_t baud, UartData dataBits, UartParity parity, UartStop stopBits) {
     uart_port_t port = (uart_port_t)uart_num;
     if (port) {
-        fnc_uart_config_t conf;
+        fnc_uart_config_t conf{};
         conf.source_clk          = UART_SCLK_APB;
         conf.baud_rate           = baud;
         conf.data_bits           = datalen[dataBits];
@@ -115,7 +118,7 @@ void uart_mode(uint32_t uart_num, uint32_t baud, UartData dataBits, UartParity p
 
         fnc_uart_param_config(port, &conf);
     } else {
-        uart_config_t conf;
+        uart_config_t conf{};
         conf.source_clk          = UART_SCLK_APB;
         conf.baud_rate           = baud;
         conf.data_bits           = datalen[dataBits];
@@ -175,6 +178,7 @@ void uart_sw_flow_control(uint32_t uart_num, bool on, uint32_t xon_threshold, ui
     }
 }
 bool uart_pins(uint32_t uart_num, pinnum_t tx_pin, pinnum_t rx_pin, pinnum_t rts_pin, pinnum_t cts_pin) {
+    rx_configured[uart_num] = rx_pin >= 0;
     uart_port_t port = (uart_port_t)uart_num;
     if (port) {
         return fnc_uart_set_pin(uart_port_t(uart_num), tx_pin, rx_pin, rts_pin, cts_pin) != ESP_OK;

@@ -32,6 +32,7 @@ namespace Kinematics {
         void         motors_to_cartesian(float* cartesian, float* motors, axis_t n_axis) override;
 
         bool canHome(AxisMask axisMask) override;
+        AxisMask homingModeAxes(AxisMask axisMask) override;
         void releaseMotors(AxisMask axisMask, MotorMask motors) override;
         bool limitReached(AxisMask& axisMask, MotorMask& motors, MotorMask limited) override;
 
