@@ -65,6 +65,15 @@ namespace MotorDrivers {
             // when run_mode or homing_mode is StallGuard.
             handler.item("stallguard", _stallguard, 0, 255);
 
+            // @config stallguard_seek
+            // @default (none)
+            // @default_note substituted with stallguard in afterParse() if not set
+            // Separate StallGuard threshold for the fast (seek) approach phase.
+            // TMC2209 StallGuard sensitivity is speed-dependent, so this can be
+            // tuned independently from the slower feed approach. An omitted value
+            // preserves the previous behavior by reusing stallguard.
+            handler.item("stallguard_seek", _stallguard_seek, 0, 255);
+
             // @config stallguard_debug
             // @default false
             // Logs live StallGuard sensor values -- useful for tuning the stallguard
@@ -94,6 +103,9 @@ namespace MotorDrivers {
             TrinamicUartDriver::afterParse();
             if (_homing_current == 0) {
                 _homing_current = _run_current;
+            }
+            if (_stallguard_seek == UNSET_STALLGUARD_SEEK) {
+                _stallguard_seek = _stallguard;
             }
         }
 

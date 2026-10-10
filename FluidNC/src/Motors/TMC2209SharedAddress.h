@@ -31,6 +31,7 @@ namespace MotorDrivers {
         uint32_t run_mode;
         uint32_t homing_mode;
         int32_t  stallguard;
+        int32_t  stallguard_seek;
         uint8_t  toff_disable;
         uint8_t  toff_stealthchop;
         uint8_t  toff_coolstep;
@@ -48,6 +49,7 @@ namespace MotorDrivers {
             TMC2209_COMPARE(run_mode);
             TMC2209_COMPARE(homing_mode);
             TMC2209_COMPARE(stallguard);
+            TMC2209_COMPARE(stallguard_seek);
             TMC2209_COMPARE(toff_disable);
             TMC2209_COMPARE(toff_stealthchop);
             TMC2209_COMPARE(toff_coolstep);

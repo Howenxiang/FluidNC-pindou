@@ -27,6 +27,7 @@ namespace MotorDrivers {
                  _run_mode,
                  _homing_mode,
                  _stallguard,
+                 _stallguard_seek,
                  _toff_disable,
                  _toff_stealthchop,
                  _toff_coolstep,
